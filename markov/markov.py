@@ -75,7 +75,7 @@ class Markov:
             self.prev = self.prev[1:]
 
         return next
-        
+
     def next(self):
         return self.__next__()
 

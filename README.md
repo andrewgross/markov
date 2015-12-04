@@ -6,34 +6,25 @@ number of different ways, a list of commands can be produced by typing
 `help`, and help for specific topics can be found by typing `help
 topic`.
 
-Dependencies
-------------
-
- - python3
- - docopt
-
-Getting Started
+Installation
 ---------------
 
-1. Download the KingJamesProgramming corpus:
+```
+pip install markov
+```
 
-    ````
-    wget http://misc.barrucadu.co.uk/pub/KingJamesProgramming.tar.xz
-    tar xvf KingJamesProgramming.tar.xz
-    ````
+Usage
+-----
 
-2. Fire up the program
+Text sources should be multiple plaintext files in a directory.
 
-    ````
-    python3 /path/to/repo
-    ````
 
-3. Generate text
+````
+train 3 --noparagraphs /path/to/KingJamesProgramming/*
+tokens 350
+````
 
-    ````
-    train 3 --noparagraphs /path/to/KingJamesProgramming/*
-    tokens 350
-    ````
+
 
 Warning: Termination
 --------------------

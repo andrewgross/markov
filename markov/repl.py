@@ -1,3 +1,4 @@
+
 import cmd
 import shlex
 import docopt
@@ -6,6 +7,9 @@ import glob
 import markovstate
 import fileinput
 import functools
+
+import help_text
+from helpers import print_help
 
 
 def decorator_with_arguments(wrapper):
@@ -34,30 +38,22 @@ def arg_wrapper(f, cmd, argstr="", types={}):
     return wrapper
 
 
-class Repl(object,cmd.Cmd):
-    """REPL for Markov interaction. This is way overkill, yay!
+class Repl(cmd.Cmd, object):
+    """
+    REPL for Markov interaction. This is way overkill, yay!
     """
 
     def __init__(self):
-        """Initialise a new REPL.
         """
-        self.completekey = False
+        Initialise a new REPL.
+        """
         self.cmdqueue = []
         super(Repl, self).__init__()
         self.markov = markovstate.MarkovState()
+        self.prompt = "markov> "
 
     def help_generators(self):
-        print("""Generate a sequence of output:
-
-generator <len> [--seed=<seed>] [--prob=<prob>] [--offset=<offset>] [--] [<prefix>...]
-
-<len> is the length of the sequence; <seed> is the optional random
-seed. If no seed is given, the current system time is used; and <prob>
-is the probability of random token choice. The default value for <prob>
-is 0. If an offset is give, drop that many tokens from the start of the
-output. The optional prefix is used to see the generator with tokens. A
-prefix of length longer than the generator's n will be truncated.
-""")
+        print_help(help_text.GENERATORS)
 
     @arg_wrapper("tokens",
                  "<len> [--seed=<seed>] [--prob=<prob>] [--offset=<offset>] [--] [<prefix>...]",
@@ -67,7 +63,6 @@ prefix of length longer than the generator's n will be truncated.
                   "--offset": (int, 0),
                   "<prefix>": (tuple, ())})
     def do_tokens(self, args):
-        """Generate tokens of output. See 'help generators'."""
 
         try:
             print(self.markov.generate(args["<len>"], args["--seed"],
@@ -75,6 +70,9 @@ prefix of length longer than the generator's n will be truncated.
                                        prefix=args["<prefix>"]))
         except markovstate.MarkovStateError as e:
             print(e.value)
+
+    def help_tokens(self):
+        print_help(help_text.TOKENS)
 
     @arg_wrapper("paragraphs",
                  "<len> [--seed=<seed>] [--prob=<prob>] [--offset=<offset>] [--] [<prefix>...]",
@@ -84,8 +82,6 @@ prefix of length longer than the generator's n will be truncated.
                   "--offset": (int, 0),
                   "<prefix>": (tuple, ('\n\n',))})
     def do_paragraphs(self, args):
-        """Generate paragraphs of output. See 'help generators'."""
-
         try:
             print(self.markov.generate(args["<len>"], args["--seed"],
                                        args["--prob"], args["--offset"],
@@ -93,6 +89,9 @@ prefix of length longer than the generator's n will be truncated.
                                        kill=1, prefix=args["<prefix>"]))
         except markovstate.MarkovStateError as e:
             print(e.value)
+
+    def help_paragraphs(self):
+        print_help(help_text.PARAGRAPHS)
 
     @arg_wrapper("sentences",
                  "<len> [--seed=<seed>] [--prob=<prob>] [--offset=<offset>] [--] [<prefix>...]",
@@ -102,8 +101,6 @@ prefix of length longer than the generator's n will be truncated.
                   "--offset": (int, 0),
                   "<prefix>": (tuple, ())})
     def do_sentences(self, args):
-        """Generate sentences of output. See 'help generators'."""
-
         sentence_token = lambda t: t[-1] in ".!?"
         try:
             print(self.markov.generate(args["<len>"], args["--seed"],
@@ -114,32 +111,22 @@ prefix of length longer than the generator's n will be truncated.
         except markovstate.MarkovStateError as e:
             print(e.value)
 
+    def help_sentences(self):
+        print_help(help_text.SENTENCES)
+
     @arg_wrapper("continue", "[<len>]", {"<len>": (int, 1)})
     def do_continue(self, args):
-        """Continue generating output.
-
-continue [<len>]"""
-
         try:
             print(self.markov.more(args["<len>"]))
         except markovstate.MarkovStateError as e:
             print(e.value)
 
+    def help_continue(self):
+        print_help(help_text.CONTINUE)
+
     # Loading and saving data
     @arg_wrapper("train", "<n> [--noparagraphs] <path> ...", {"<n>": (int,)})
     def do_train(self, args):
-        """Train a generator on a corpus.
-
-train <n> [--noparagraphs] <path> ...
-
-Discard the current generator, and train a new generator on the given paths.
-Wildcards are allowed.
-
-<n> is the length of prefix (producing <n+1>-grams). If the 'noparagraphs'
-option is given, paragraph breaks are treated as spaces and discarded, rather
-than a separate token.
-"""
-
         paths = [path
                  for ps in args["<path>"]
                  for path in glob.glob(os.path.expanduser(ps))]
@@ -150,31 +137,35 @@ than a separate token.
                 for char in line:
                     yield char
             fi.close()
-        
+
         self.markov.train(args["<n>"],
                           charinput(paths),
                           noparagraphs=args["--noparagraphs"])
 
+    def help_train(self):
+        print_help(help_text.TRAIN)
+
     @arg_wrapper("load", "<file>")
     def do_load(self, args):
-        """Load a generator from disk.
-
-load <file>
-
-Discard the current generator, and load the trained generator in the given
-file."""
-
         self.markov.load(args["<file>"])
+
+    def help_load(self):
+        print_help(help_text.LOAD)
 
     @arg_wrapper("dump", "<file>")
     def do_dump(self, args):
-        """Save a generator to disk.
-
-dump <file>
-
-Save the trained generator to the given file."""
-
         try:
             self.markov.dump(args["<file>"])
         except markovstate.MarkovStateError as e:
             print(e.value)
+
+    def help_dump(self):
+        print_help(help_text.DUMP)
+
+    def do_exit(self, line):
+        return True
+
+    def help_exit(self):
+        print_help(help_text.EXIT)
+
+    do_EOF = do_exit
